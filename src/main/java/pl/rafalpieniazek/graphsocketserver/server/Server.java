@@ -1,5 +1,7 @@
 package pl.rafalpieniazek.graphsocketserver.server;
 
+import pl.rafalpieniazek.graphsocketserver.graph.Graph;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,6 +16,8 @@ public class Server {
     Map<UUID, ClientHandler> clients = new HashMap<>();
 
     public Server() {
+        Graph graph = new Graph();
+
         try {
             ServerSocket listener = new ServerSocket(PORT);
 
@@ -21,7 +25,7 @@ public class Server {
             while (true) {
                 Socket socket = listener.accept();
                 UUID generatedUUID = UUID.randomUUID();
-                ClientHandler clientHandler = new ClientHandler(socket, generatedUUID);
+                ClientHandler clientHandler = new ClientHandler(socket, generatedUUID, graph);
                 clients.put(generatedUUID, clientHandler);
                 new Thread(clientHandler).start();
             }

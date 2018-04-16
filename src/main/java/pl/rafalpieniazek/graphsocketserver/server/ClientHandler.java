@@ -1,5 +1,7 @@
 package pl.rafalpieniazek.graphsocketserver.server;
 
+import pl.rafalpieniazek.graphsocketserver.graph.Graph;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,24 +10,28 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.UUID;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
+import static pl.rafalpieniazek.graphsocketserver.server.ServerResponse.*;
+import static pl.rafalpieniazek.graphsocketserver.server.ServerResponse.HI_NAME;
 
 public class ClientHandler implements Runnable {
 
     private static final int TIMEOUT = 30_000;
     private final long connectionStartedTime;
+
     private Socket socket;
     private UUID uuid;
     private String name;
 
     private BufferedReader in;
     private PrintWriter out;
+    private CommandResolver commandResolver;
 
-
-    public ClientHandler(Socket socket, UUID uuid) {
+    public ClientHandler(Socket socket, UUID uuid, Graph graph) {
         this.socket = socket;
         this.uuid = uuid;
         this.connectionStartedTime = System.currentTimeMillis();
+        this.commandResolver = new CommandResolver(graph, this);
     }
 
     public void run() {
@@ -44,9 +50,19 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    public void sendResponseToClient(ServerResponse response) {
+        out.println(response.getMessage());
+    }
+
     private void sendConnectedSuccessMessage() {
-        System.out.println("Sending connected success message: " + uuid.toString());
-        out.println(format(Events.HI_UUID.getMessage(), uuid.toString()));
+        System.out.println("Client connected with UUID: " + uuid.toString());
+        out.println(format(HI_UUID.getMessage(), uuid.toString()));
+    }
+
+    protected void handleHiEvent(String requestMessage) {
+        this.name = lastWordInSentence(requestMessage);
+        String message = String.format(HI_NAME.getMessage(), this.name);
+        out.println(message);
     }
 
     private void waitForEvent() throws IOException {
@@ -59,30 +75,21 @@ public class ClientHandler implements Runnable {
 
     private void handleEvent(String requestMessage) {
         System.out.printf("Handling message from client: %s, message body: %s \n", uuid, requestMessage);
-        if (requestMessage.startsWith("HI")) {
-            handleHiEvent(requestMessage);
-        } else if (requestMessage.startsWith("BYE")) {
-            disconnectUser();
-        } else {
-            out.println(Events.UNKNOW_COMMAND.getMessage());
-        }
+        commandResolver.resolve(requestMessage);
     }
 
-    private void handleHiEvent(String requestMessage) {
-        name = requestMessage.substring(requestMessage.lastIndexOf(" ") + 1);
-        String message = format(Events.HI_NAME.getMessage(), name);
-        out.println(message);
-    }
-
-    private void disconnectUser() {
+    protected void disconnectUser() {
         System.out.println("Disconnecting user");
-        String message = format("BYE %s, WE SPOKE FOR %d MS", name, calculateConnectionTime());
+        String message = format(BYE.getMessage(), name, calculateConnectionTime());
         out.println(message);
-        closeSocket();
     }
 
     private long calculateConnectionTime() {
         return System.currentTimeMillis() - this.connectionStartedTime;
+    }
+
+    private String lastWordInSentence(String requestMessage) {
+        return requestMessage.substring(requestMessage.lastIndexOf(" ") + 1);
     }
 
     private void closeSocket() {
