@@ -1,6 +1,7 @@
 package pl.rafalpieniazek.graphsocketserver.graph;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 public class Graph {
@@ -8,7 +9,7 @@ public class Graph {
     private final List<Edge> edges;
 
     public Graph() {
-        this.nodes = new LinkedHashSet<>();
+        this.nodes = ConcurrentHashMap.newKeySet();
         this.edges = new ArrayList<>();
     }
 
