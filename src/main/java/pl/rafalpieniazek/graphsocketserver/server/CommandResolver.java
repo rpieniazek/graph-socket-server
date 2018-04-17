@@ -5,6 +5,7 @@ import pl.rafalpieniazek.graphsocketserver.graph.Node;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static pl.rafalpieniazek.graphsocketserver.server.ServerResponse.*;
 
@@ -107,14 +108,18 @@ public class CommandResolver {
         Optional<Node> nodeByName = graph.findNodeByName(split[3]);
 
         if (nodeByName.isPresent()) {
-            String nodesCloserThan = graph.closerThan(nodeByName.get(), width)
-                    .map(Node::getName)
-                    .sorted(String::compareTo)
-                    .collect(Collectors.joining(","));
-
-            clientHandler.sendResponseToClient(nodesCloserThan);
+            Stream<Node> nodesStream = graph.closerThan(nodeByName.get(), width);
+            String commaSeparatesNodesNames = sortNodesAndJoinNames(nodesStream);
+            clientHandler.sendResponseToClient(commaSeparatesNodesNames);
         } else {
             clientHandler.sendResponseToClient(NODE_NOT_FOUND);
         }
+    }
+
+    private String sortNodesAndJoinNames(Stream<Node> nodesStream) {
+        return nodesStream
+                .map(Node::getName)
+                .sorted(String::compareTo)
+                .collect(Collectors.joining(","));
     }
 }

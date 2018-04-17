@@ -27,10 +27,10 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
     private CommandResolver commandResolver;
 
-    public ClientHandler(Socket socket, UUID uuid, Graph graph) {
-        this.socket = socket;
-        this.uuid = uuid;
+    public ClientHandler(Socket socket, Graph graph) {
+        this.uuid = UUID.randomUUID();
         this.connectionStartedTime = System.currentTimeMillis();
+        this.socket = socket;
         this.commandResolver = new CommandResolver(graph, this);
     }
 

@@ -35,7 +35,7 @@ public class DijkstraAlgorithm {
         distances.put(source, 0);
 
         while (undVisitedNodes.size() > 0) {
-            Node node = getMinimum(undVisitedNodes);
+            Node node = getMinDistance(undVisitedNodes);
             visitedNodes.add(node);
             undVisitedNodes.remove(node);
             findMinimalDistances(node);
@@ -61,10 +61,10 @@ public class DijkstraAlgorithm {
                 .collect(Collectors.toMap(Edge::getDestination, Edge::getWeight, Integer::min));
     }
 
-    private Node getMinimum(Set<Node> nodes) {
+    private Node getMinDistance(Set<Node> nodes) {
         return nodes.stream()
                 .min(Comparator.comparingInt(this::getDistanceForNode))
-                .orElse(null);
+                .orElseThrow(IllegalStateException::new);
     }
 
     private boolean isVisited(Node node) {
