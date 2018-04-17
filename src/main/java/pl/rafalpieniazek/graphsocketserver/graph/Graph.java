@@ -12,7 +12,6 @@ public class Graph {
         this.edges = new ArrayList<>();
     }
 
-
     public Optional<Node> findNodeByName(String nodeName) {
         return nodes.stream()
                 .filter(node -> node.getName().equals(nodeName))
@@ -28,8 +27,8 @@ public class Graph {
         edges.add(edge);
     }
 
-    public boolean removeEdge(Node source, Node destination) {
-        return edges.removeIf(edge -> edge.getSource().equals(source) && edge.getDestination().equals(destination));
+    public void removeEdge(Node source, Node destination) {
+        edges.removeIf(edge -> edge.getSource().equals(source) && edge.getDestination().equals(destination));
     }
 
     public void removeNode(Node node) {
@@ -39,22 +38,19 @@ public class Graph {
 
     public int shortestPath(Node source, Node dest) {
         DijkstraAlgorithm dijkstraAlgorithm = new DijkstraAlgorithm(this);
-        dijkstraAlgorithm.execute(source);
-        Integer distance = dijkstraAlgorithm.getDistance(dest);
-        System.out.printf("calculated path from node: %s to node: %s equals %d\n", source.getName(), dest.getName(), distance);
-        return Optional.ofNullable(distance).orElse(Integer.MAX_VALUE);
+        int distance = dijkstraAlgorithm.shortestPath(source, dest);
+        System.out.printf("Calculated path from node: %s to node: %s equals %d\n", source.getName(), dest.getName(), distance);
+        return distance;
     }
 
-    public Stream<String> closerFromThan(Node source, Integer weight) {
+    public Stream<Node> closerThan(Node source, Integer weight) {
         DijkstraAlgorithm dijkstraAlgorithm = new DijkstraAlgorithm(this);
-        dijkstraAlgorithm.execute(source);
-        return dijkstraAlgorithm.getDistance().entrySet().stream()
-                .filter(entry -> entry.getValue() < weight)
-                .map(nodeIntegerEntry -> nodeIntegerEntry.getKey().getName());
-    }
+        Map<Node, Integer> nodeWeightMap = dijkstraAlgorithm.shortestDistanceForEachNode(source);
 
-    public Set<Node> getNodes() {
-        return nodes;
+        return nodeWeightMap.entrySet().stream()
+                .filter(entry -> entry.getValue() < weight)
+                .filter(entry -> !entry.getKey().equals(source))
+                .map(Map.Entry::getKey);
     }
 
     public List<Edge> getEdges() {

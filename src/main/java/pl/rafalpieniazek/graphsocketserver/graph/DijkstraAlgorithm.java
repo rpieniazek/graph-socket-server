@@ -6,80 +6,73 @@ import java.util.stream.Collectors;
 
 public class DijkstraAlgorithm {
     private final List<Edge> edges;
-    private Set<Node> settledNodes;
-    private Set<Node> unSettledNodes;
+    private Set<Node> visitedNodes;
+    private Set<Node> undVisitedNodes;
 
-    public Map<Node, Integer> getDistance() {
-        return distance;
-    }
-
-    private Map<Node, Integer> distance;
+    private Map<Node, Integer> distances;
 
 
-    public DijkstraAlgorithm(Graph graph) {
+    DijkstraAlgorithm(Graph graph) {
         this.edges = new ArrayList<>(graph.getEdges());
     }
 
+    public Integer shortestPath(Node source, Node dest) {
+        execute(source);
+        return getDistanceForNode(dest);
+    }
+
+    public Map<Node, Integer> shortestDistanceForEachNode(Node source) {
+        execute(source);
+        return distances;
+    }
+
     public void execute(Node source) {
-        settledNodes = new HashSet<>();
-        unSettledNodes = new HashSet<>();
-        distance = new HashMap<>();
-        distance.put(source, 0);
-        unSettledNodes.add(source);
-        while (unSettledNodes.size() > 0) {
-            Node node = getMinimum(unSettledNodes);
-            settledNodes.add(node);
-            unSettledNodes.remove(node);
+        visitedNodes = new HashSet<>();
+        undVisitedNodes = new HashSet<>();
+        undVisitedNodes.add(source);
+
+        distances = new HashMap<>();
+        distances.put(source, 0);
+
+        while (undVisitedNodes.size() > 0) {
+            Node node = getMinimum(undVisitedNodes);
+            visitedNodes.add(node);
+            undVisitedNodes.remove(node);
             findMinimalDistances(node);
         }
     }
 
-    public Integer getDistance(Node dest) {
-        return distance.get(dest);
-    }
-
     private void findMinimalDistances(Node node) {
-        List<Node> adjacentNodes = getNeighbors(node);
-        for (Node target : adjacentNodes) {
-            if (getShortestDistance(target) > getShortestDistance(node) + getDistance(node, target)) {
-                distance.put(target, getShortestDistance(node)
-                        + getDistance(node, target));
-                unSettledNodes.add(target);
+        Map<Node, Integer> adjacentNodes = getNeighbours(node);
+        for (Map.Entry<Node, Integer> entry : adjacentNodes.entrySet()) {
+            Node destination = entry.getKey();
+            int newDistance = getDistanceForNode(node) + entry.getValue();
+            if (newDistance < getDistanceForNode(destination)) {
+                distances.put(destination, newDistance);
+                undVisitedNodes.add(destination);
             }
         }
     }
 
-    private int getDistance(Node source, Node destination) {
-        for (Edge edge : edges) {
-            if (edge.getSource().equals(source)
-                    && edge.getDestination().equals(destination)) {
-                return edge.getWeight();
-            }
-        }
-        throw new RuntimeException("Should not happen");
-    }
-
-    private List<Node> getNeighbors(Node node) {
+    private Map<Node, Integer> getNeighbours(Node node) {
         return edges.stream()
                 .filter(edge -> edge.getSource().equals(node))
-                .filter(edge -> !isSettled(edge.getDestination()))
-                .map(Edge::getDestination)
-                .collect(Collectors.toList());
+                .filter(edge -> !isVisited(edge.getDestination()))
+                .collect(Collectors.toMap(Edge::getDestination, Edge::getWeight, Integer::min));
     }
 
     private Node getMinimum(Set<Node> nodes) {
         return nodes.stream()
-                .min(Comparator.comparingInt(this::getShortestDistance))
+                .min(Comparator.comparingInt(this::getDistanceForNode))
                 .orElse(null);
     }
 
-    private boolean isSettled(Node vertex) {
-        return settledNodes.contains(vertex);
+    private boolean isVisited(Node node) {
+        return visitedNodes.contains(node);
     }
 
-    private int getShortestDistance(Node destination) {
-        Integer d = distance.get(destination);
+    private int getDistanceForNode(Node destination) {
+        Integer d = distances.get(destination);
         return d == null ? Integer.MAX_VALUE : d;
     }
-
 }

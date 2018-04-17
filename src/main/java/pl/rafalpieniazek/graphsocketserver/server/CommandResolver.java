@@ -3,8 +3,6 @@ package pl.rafalpieniazek.graphsocketserver.server;
 import pl.rafalpieniazek.graphsocketserver.graph.Graph;
 import pl.rafalpieniazek.graphsocketserver.graph.Node;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -36,16 +34,7 @@ public class CommandResolver {
         } else if (requestMessage.startsWith("SHORTEST PATH")) {
             calculateShortestPath(requestMessage);
         } else if (requestMessage.startsWith("CLOSER THAN")) {
-            String[] split = requestMessage.split(" ");
-            Integer width = Integer.parseInt(split[2]);
-            Optional<Node> nodeByName = graph.findNodeByName(split[3]);
-            if (nodeByName.isPresent()) {
-                String nodesCloserThan = graph.closerFromThan(nodeByName.get(), width)
-                        .collect(Collectors.joining(","));
-                clientHandler.sendResponseToClient(nodesCloserThan);
-            } else {
-                clientHandler.sendResponseToClient(NODE_NOT_FOUND);
-            }
+            calculateCloserThan(requestMessage);
         } else {
             clientHandler.sendResponseToClient(UNKNOWN_COMMAND);
         }
@@ -112,15 +101,20 @@ public class CommandResolver {
         }
     }
 
-    public static void main(String[] args) {
-        List<String> names = new ArrayList<>();
-        names.add("abb");
-        names.add("cycki");
-        names.add("dupa");
+    private void calculateCloserThan(String requestMessage) {
+        String[] split = requestMessage.split(" ");
+        Integer width = Integer.parseInt(split[2]);
+        Optional<Node> nodeByName = graph.findNodeByName(split[3]);
 
-        String s = names.stream().collect(Collectors.joining(","));
-        System.out.println(s);
+        if (nodeByName.isPresent()) {
+            String nodesCloserThan = graph.closerThan(nodeByName.get(), width)
+                    .map(Node::getName)
+                    .sorted(String::compareTo)
+                    .collect(Collectors.joining(","));
 
-
+            clientHandler.sendResponseToClient(nodesCloserThan);
+        } else {
+            clientHandler.sendResponseToClient(NODE_NOT_FOUND);
+        }
     }
 }
