@@ -3,7 +3,10 @@ package pl.rafalpieniazek.graphsocketserver.server;
 import pl.rafalpieniazek.graphsocketserver.graph.Graph;
 import pl.rafalpieniazek.graphsocketserver.graph.Node;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static pl.rafalpieniazek.graphsocketserver.server.ServerResponse.*;
 
@@ -30,10 +33,24 @@ public class CommandResolver {
             removeNode(requestMessage);
         } else if (requestMessage.startsWith("REMOVE EDGE")) {
             removeEdge(requestMessage);
+        } else if (requestMessage.startsWith("SHORTEST PATH")) {
+            calculateShortestPath(requestMessage);
+        } else if (requestMessage.startsWith("CLOSER THAN")) {
+            String[] split = requestMessage.split(" ");
+            Integer width = Integer.parseInt(split[2]);
+            Optional<Node> nodeByName = graph.findNodeByName(split[3]);
+            if (nodeByName.isPresent()) {
+                String nodesCloserThan = graph.closerFromThan(nodeByName.get(), width)
+                        .collect(Collectors.joining(","));
+                clientHandler.sendResponseToClient(nodesCloserThan);
+            } else {
+                clientHandler.sendResponseToClient(NODE_NOT_FOUND);
+            }
         } else {
             clientHandler.sendResponseToClient(UNKNOWN_COMMAND);
         }
     }
+
 
     private void addEdge(String requestMessage) {
         String[] split = requestMessage.split(" ");
@@ -82,5 +99,28 @@ public class CommandResolver {
             clientHandler.sendResponseToClient(NODE_NOT_FOUND);
     }
 
+    private void calculateShortestPath(String requestMessage) {
+        String[] split = requestMessage.split(" ");
+        Optional<Node> maybeSource = graph.findNodeByName(split[2]);
+        Optional<Node> maybeDestination = graph.findNodeByName(split[3]);
 
+        if (maybeSource.isPresent() && maybeDestination.isPresent()) {
+            int weightsSum = graph.shortestPath(maybeSource.get(), maybeDestination.get());
+            clientHandler.sendResponseToClient(String.valueOf(weightsSum));
+        } else {
+            clientHandler.sendResponseToClient(NODE_NOT_FOUND);
+        }
+    }
+
+    public static void main(String[] args) {
+        List<String> names = new ArrayList<>();
+        names.add("abb");
+        names.add("cycki");
+        names.add("dupa");
+
+        String s = names.stream().collect(Collectors.joining(","));
+        System.out.println(s);
+
+
+    }
 }

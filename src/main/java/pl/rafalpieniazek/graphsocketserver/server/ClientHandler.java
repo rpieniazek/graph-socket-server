@@ -54,6 +54,10 @@ public class ClientHandler implements Runnable {
         out.println(response.getMessage());
     }
 
+    public void sendResponseToClient(String response) {
+        out.println(response);
+    }
+
     private void sendConnectedSuccessMessage() {
         System.out.println("Client connected with UUID: " + uuid.toString());
         out.println(format(HI_UUID.getMessage(), uuid.toString()));
