@@ -7,7 +7,7 @@ This project is recruitment assignment solution.
 Execute in project root folder: 
 
 ```
-mvn exec:exec
+mvn compile exec:exec
 ```
 
 or if you have jar built:
